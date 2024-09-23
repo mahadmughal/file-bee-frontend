@@ -43,17 +43,20 @@ function SignUp() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/user/register/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json", // Set appropriate header
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/user/register/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // Set appropriate header
+          },
+          body: JSON.stringify({
+            username,
+            email,
+            password,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

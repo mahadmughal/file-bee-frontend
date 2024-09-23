@@ -41,13 +41,16 @@ const AuthProvider = ({ children }) => {
 
   const loginAction = async (data) => {
     try {
-      const response = await fetch("http://localhost:8000/api/user/login/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/user/login/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -84,12 +87,15 @@ const AuthProvider = ({ children }) => {
 
   const getUserDetails = async (token) => {
     try {
-      const response = await fetch("http://localhost:8000/api/user/", {
-        method: "GET",
-        headers: {
-          Authorization: `Token ${token.key}`,
-        },
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/user/`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Token ${token.key}`,
+          },
+        }
+      );
 
       if (response.status === 401) {
         navigate("/sign_in");

@@ -18,7 +18,7 @@ function RequestPasswordResetToken() {
       return;
     }
 
-    const url = "http://localhost:8000/api/user/request_reset_password/";
+    const url = `${process.env.REACT_APP_API_BASE_URL}/api/user/request_reset_password/`;
     const header = { "X-CSRFTOKEN": getCookie("csrftoken") };
     const formData = new FormData();
     formData.append("email", email);
