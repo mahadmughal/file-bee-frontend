@@ -43,6 +43,7 @@ function SignUp() {
     }
 
     try {
+      console.log(`${process.env.REACT_APP_API_BASE_URL}/api/user/register/`);
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api/user/register/`,
         {
