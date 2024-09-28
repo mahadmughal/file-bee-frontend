@@ -93,14 +93,14 @@ class ApiService {
 
   // Specific API methods
   async fetchSupportedMimetypes() {
-    return this.getWithAuth("/target_conversions/");
+    return this.getWithAuth("/api/target_conversions/");
   }
 
   async convertFile(file, targetMimetype) {
     const formData = new FormData();
     formData.append("original_file", file);
     formData.append("converted_mimetype", targetMimetype);
-    return this.postFormDataWithAuth("/", formData);
+    return this.postFormDataWithAuth("/api/convert/", formData);
   }
 
   async resetPassword(passwordResetToken, newPassword, confirmPassword) {
@@ -121,7 +121,7 @@ class ApiService {
   }
 
   async submitHelpRequest(formData) {
-    return this.postWithoutAuth("/send_help_request/", formData);
+    return this.postWithoutAuth("/api/send_help_request/", formData);
   }
 }
 
