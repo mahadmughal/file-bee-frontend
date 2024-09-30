@@ -168,6 +168,12 @@ function FileConversion(props) {
     }
 
     for (const key in conversions) {
+      if (key.toLowerCase() == fileName.toLowerCase()) {
+        return key;
+      }
+    }
+
+    for (const key in conversions) {
       if (key.toLowerCase().includes(fileName.toLowerCase())) {
         return key;
       }
