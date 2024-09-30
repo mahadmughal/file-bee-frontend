@@ -168,7 +168,7 @@ function FileConversion(props) {
     }
 
     for (const key in conversions) {
-      if (key.toLowerCase() == fileName.toLowerCase()) {
+      if (key.toLowerCase().split("/").pop() == fileName.toLowerCase()) {
         return key;
       }
     }
