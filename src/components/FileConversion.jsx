@@ -4,6 +4,7 @@ import SweetAlert2 from "react-sweetalert2";
 import Features from "./Features";
 import { useAuth } from "../contexts/AuthContext";
 import { useApiService } from "../services/apiService";
+import { getFileDownloadUrl } from "../services/s3Service";
 
 function FileConversion(props) {
   const apiService = useApiService();
@@ -89,7 +90,8 @@ function FileConversion(props) {
         conversion.targetMimetype
       );
 
-      const { url, file_name } = response.converted_file;
+      const { file_name } = response.converted_file;
+      const url = await getFileDownloadUrl(file_name);
 
       return {
         fileDownloadUrl: url,
