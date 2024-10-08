@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import "../App.css";
 import SweetAlert2 from "react-sweetalert2";
 import Features from "./Features";
-import { useAuth } from "../contexts/AuthContext";
 import { useApiService } from "../services/apiService";
 import { getFileDownloadUrl } from "../services/s3Service";
 
@@ -15,7 +14,6 @@ function FileConversion(props) {
   const [conversionData, setConversionData] = useState([]);
   const [supportedConversions, setSupportedConversions] = useState({});
 
-  const { token } = useAuth();
   const fetchedRef = useRef(false);
 
   const conversionStatus = {
@@ -27,7 +25,7 @@ function FileConversion(props) {
 
   useEffect(() => {
     const fetchSupportedMimetypes = async () => {
-      if (fetchedRef.current || !token) return;
+      if (fetchedRef.current) return;
       fetchedRef.current = true;
 
       try {
