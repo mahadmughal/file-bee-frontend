@@ -131,7 +131,11 @@ const NavBar = () => {
                 </Link>
               </li>
               <li className="nav-main-item">
-                <Link to="/help" className="nav-main-link">
+                <Link
+                  to="/help"
+                  className={`nav-main-link ${isActive("/help")}`}
+                  onClick={() => handleNavLinkClick("/help")}
+                >
                   <i className="nav-main-link-icon fa fa-hands-helping"></i>
                   <span className="nav-main-link-name">Help</span>
                 </Link>
