@@ -49,6 +49,10 @@ class ApiService {
     }
   }
 
+  async getWithoutAuth(endpoint) {
+    return this.fetchWithoutAuth(endpoint, { method: "GET" });
+  }
+
   async getWithAuth(endpoint) {
     return this.fetchWithAuth(endpoint, { method: "GET" });
   }
@@ -93,14 +97,19 @@ class ApiService {
 
   // Specific API methods
   async fetchSupportedMimetypes() {
-    return this.getWithAuth("/api/target_conversions/");
+    return this.getWithoutAuth("/api/target_conversions/");
   }
 
   async convertFile(file, targetMimetype) {
     const formData = new FormData();
     formData.append("original_file", file);
     formData.append("converted_mimetype", targetMimetype);
-    return this.postFormDataWithAuth("/api/convert/", formData);
+    let authToken = JSON.parse(localStorage.getItem("authToken"));
+    if (authToken && authToken.key) {
+      authToken = authToken.key;
+    }
+    formData.append("auth_token", authToken);
+    return this.postFormDataWithoutAuth("/api/convert/", formData);
   }
 
   async resetPassword(passwordResetToken, newPassword, confirmPassword) {
