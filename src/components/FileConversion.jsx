@@ -151,8 +151,6 @@ function FileConversion(props) {
             uploadedConversion
           );
 
-          debugger;
-
           setConvertedFileData((prevConvertedFileData) => [
             ...prevConvertedFileData,
             newConvertedFileConversion,
