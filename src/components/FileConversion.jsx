@@ -11,8 +11,13 @@ function FileConversion(props) {
   const fileType = props.fileType;
 
   const [swalProps, setSwalProps] = useState({});
-  const [conversionData, setConversionData] = useState([]);
-  const [supportedConversions, setSupportedConversions] = useState({});
+  const [uploadedFileData, setUploadedFileData] = useState([]);
+  const [convertedFileData, setConvertedFileData] = useState(
+    JSON.parse(localStorage.getItem("convertedFilesData")) || []
+  );
+  const [supportedConversions, setSupportedConversions] = useState(
+    JSON.parse(localStorage.getItem("supportedConversions")) || {}
+  );
 
   const fetchedRef = useRef(false);
 
@@ -24,20 +29,31 @@ function FileConversion(props) {
   };
 
   useEffect(() => {
-    const fetchSupportedMimetypes = async () => {
-      if (fetchedRef.current) return;
-      fetchedRef.current = true;
+    const isEmpty = Object.keys(supportedConversions).length === 0;
 
-      try {
-        const data = await apiService.fetchSupportedMimetypes();
-        setSupportedConversions(data.supported_conversions);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      }
-    };
-
-    fetchSupportedMimetypes();
+    if (isEmpty) {
+      fetchSupportedMimetypes();
+    }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "supportedConversions",
+      JSON.stringify(supportedConversions)
+    );
+  }, [supportedConversions]);
+
+  const fetchSupportedMimetypes = async () => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    try {
+      const data = await apiService.fetchSupportedMimetypes();
+      setSupportedConversions(data.supported_conversions);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
 
   const handleFileUpload = (event) => {
     const files = event.target.files;
@@ -45,21 +61,21 @@ function FileConversion(props) {
       file: file,
       status: "ready",
     }));
-    setConversionData([...conversionData, ...fileObjects]);
+    setUploadedFileData([...uploadedFileData, ...fileObjects]);
   };
 
   const selectSupportedConversion = (event) => {
     console.log("event: ", event);
     const conversionIndex = event.target.id;
-    const selectedConversion = event.target.value;
+    const selectedTargetMimetype = event.target.value;
 
-    const newConversionData = [...conversionData];
-    newConversionData[conversionIndex] = {
-      ...newConversionData[conversionIndex],
-      targetMimetype: selectedConversion,
+    const newUploadedFileData = [...uploadedFileData];
+    newUploadedFileData[conversionIndex] = {
+      ...newUploadedFileData[conversionIndex],
+      targetMimetype: selectedTargetMimetype,
     };
 
-    setConversionData(newConversionData);
+    setUploadedFileData(newUploadedFileData);
   };
 
   const validateConversion = () => {
@@ -81,19 +97,28 @@ function FileConversion(props) {
     return allDropdownsFilled;
   };
 
-  const handleConversionRequest = async (conversion, conversionIndex) => {
+  const handleConversionRequest = async (uploadedConversion) => {
     try {
       const response = await apiService.convertFile(
-        conversion.file,
-        conversion.targetMimetype
+        uploadedConversion.file,
+        uploadedConversion.targetMimetype
       );
 
-      const { file_name } = response.converted_file;
-      const url = await getFileDownloadUrl(file_name);
+      console.log("response: ", response);
+
+      const original_file = response.original_file;
+      const converted_file = response.converted_file;
+      const converted_filename = converted_file.source_url.split("/").pop();
+      const converted_file_download_url = await getFileDownloadUrl(
+        converted_filename
+      );
 
       return {
-        fileDownloadUrl: url,
-        convertedFileName: file_name,
+        originalFileName: original_file.fileName,
+        convertedFileDownloadUrl: converted_file_download_url,
+        convertedFileName: converted_filename,
+        convertedFileSize: converted_file.size,
+        status: response.status,
       };
     } catch (error) {
       console.error("Conversion error:", error);
@@ -108,42 +133,48 @@ function FileConversion(props) {
       return;
     }
 
-    const conversions = [...conversionData];
-
     try {
       await Promise.all(
-        conversions.map(async (conversion, index) => {
-          if (conversion.fileDownloadUrl) {
-            return;
-          }
-
-          conversion = {
-            ...conversion,
+        uploadedFileData.map(async (uploadedConversion, index) => {
+          uploadedConversion = {
+            ...uploadedConversion,
             status: "processing",
           };
 
-          // Use the functional state update form
-          setConversionData((prevConversions) => {
-            const updatedConversions = [...prevConversions];
-            updatedConversions[index] = conversion;
-            return updatedConversions;
+          setUploadedFileData((prevUploadedFileData) => {
+            const updatedUploadedFileData = [...prevUploadedFileData];
+            updatedUploadedFileData[index] = uploadedConversion;
+            return updatedUploadedFileData;
           });
 
-          const { fileDownloadUrl, convertedFileName } =
-            await handleConversionRequest(conversion, index);
+          const newConvertedFileConversion = await handleConversionRequest(
+            uploadedConversion
+          );
 
-          const updatedConversion = {
-            ...conversion,
-            fileDownloadUrl: fileDownloadUrl,
-            convertedFileName: convertedFileName,
-            status: fileDownloadUrl ? "completed" : "failed",
-          };
+          debugger;
 
-          // Use the functional state update form
-          setConversionData((prevConversions) => {
-            const updatedConversions = [...prevConversions];
-            updatedConversions[index] = updatedConversion;
-            return updatedConversions;
+          setConvertedFileData((prevConvertedFileData) => [
+            ...prevConvertedFileData,
+            newConvertedFileConversion,
+          ]);
+
+          const convertedFilesData =
+            JSON.parse(localStorage.getItem("convertedFilesData")) || [];
+          const updatedConvertedFilesData = [
+            ...convertedFilesData,
+            newConvertedFileConversion,
+          ];
+
+          localStorage.setItem(
+            "convertedFilesData",
+            JSON.stringify(updatedConvertedFilesData)
+          );
+
+          // Remove uploadedFileData conversion at index
+          setUploadedFileData((prevUploadedFileData) => {
+            const updatedUploadedFileData = [...prevUploadedFileData];
+            updatedUploadedFileData.splice(index, 1);
+            return updatedUploadedFileData;
           });
         })
       );
@@ -152,14 +183,32 @@ function FileConversion(props) {
     }
   };
 
-  const handleCancelConversion = (index) => {
-    const newConversionData = [...conversionData];
-    newConversionData.splice(index, 1);
-    setConversionData(newConversionData);
+  const cancelUploadedFileConversion = (index) => {
+    setUploadedFileData((prevUploadedFileData) => {
+      const updatedUploadedFileData = [...prevUploadedFileData];
+      updatedUploadedFileData.splice(index, 1);
+      return updatedUploadedFileData;
+    });
+  };
+
+  const cancelConvertedFileConversion = (index) => {
+    setConvertedFileData((prevConvertedFileData) => {
+      const updatedConvertedFilesData = [...prevConvertedFileData];
+      updatedConvertedFilesData.splice(index, 1);
+      return updatedConvertedFilesData;
+    });
+  };
+
+  const deleteConversionData = () => {
+    setUploadedFileData([]);
+    setConvertedFileData([]);
   };
 
   const supportedConversionsOfUploadedFile = (fileObject) => {
     const conversions = supportedConversions;
+
+    if (!fileObject?.file) return "";
+
     const fileType = fileObject.file.type;
     const fileName = fileObject.file.name.split(".").pop();
 
@@ -182,6 +231,11 @@ function FileConversion(props) {
     return "";
   };
 
+  const truncateFilename = (filename, maxLength = 30) => {
+    if (filename.length <= maxLength) return filename;
+    return filename.substr(0, maxLength - 3) + "...";
+  };
+
   return (
     <>
       <div className="content pb-5">
@@ -195,7 +249,7 @@ function FileConversion(props) {
           </div>
         </div>
 
-        {conversionData.length > 0 && (
+        {uploadedFileData.length > 0 || convertedFileData.length > 0 ? (
           <div className="block block-rounded block-bordered">
             <div className="block-header block-header-default">
               <h3 className="block-title">{fileType} Conversions</h3>
@@ -217,14 +271,14 @@ function FileConversion(props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {conversionData.map((fileObject, index) => (
+                  {uploadedFileData.map((fileObject, index) => (
                     <tr key={index}>
                       <td className="text-center" scope="row">
                         {index + 1}
                       </td>
                       <td className="font-w600">
                         <i className="fa fa-image mr-2"></i>
-                        {fileObject.file.name}
+                        {truncateFilename(fileObject?.file?.name) || ""}
                       </td>
                       <td>
                         <select
@@ -272,28 +326,66 @@ function FileConversion(props) {
                           <button
                             type="reset"
                             className="btn btn-sm btn-danger mr-1"
-                            onClick={() => handleCancelConversion(index)}
+                            onClick={() => cancelUploadedFileConversion(index)}
                           >
                             <i className="fa fa-fw fa-times"></i> Delete
                           </button>
-                          {fileObject.fileDownloadUrl && (
-                            <a
-                              href={
-                                fileObject.fileDownloadUrl
-                                  ? fileObject.fileDownloadUrl
-                                  : "#"
-                              }
-                              className="btn btn-sm btn-success"
-                              target="_blank"
-                              download={
-                                fileObject.convertedFileName
-                                  ? fileObject.convertedFileName
-                                  : ""
-                              }
-                            >
-                              <i className="fa fa-fw fa-download"></i> Download
-                            </a>
-                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {convertedFileData.map((convertedConversion, index) => (
+                    <tr key={index}>
+                      <td className="text-center" scope="row">
+                        {index + 1}
+                      </td>
+                      <td className="font-w600">
+                        <i className="fa fa-image mr-2"></i>
+                        {truncateFilename(
+                          convertedConversion.convertedFileName
+                        )}
+                      </td>
+                      <td>
+                        <select
+                          className="form-control target-mimetypes"
+                          id={index}
+                          style={{ width: "70%" }}
+                          disabled
+                        >
+                          <option>
+                            {convertedConversion.convertedFileName
+                              .split(".")
+                              .pop()}
+                          </option>
+                        </select>
+                      </td>
+                      <td className="d-none d-sm-table-cell">
+                        <span
+                          className={`badge badge-${
+                            conversionStatus[convertedConversion?.status]
+                              .badgeColor
+                          }`}
+                        >
+                          {convertedConversion?.status}
+                        </span>
+                      </td>
+                      <td className="text-center">
+                        <div className="btn-group">
+                          <button
+                            type="reset"
+                            className="btn btn-sm btn-danger mr-1"
+                            onClick={() => cancelConvertedFileConversion(index)}
+                          >
+                            <i className="fa fa-fw fa-times"></i> Delete
+                          </button>
+                          <a
+                            href={convertedConversion.convertedFileDownloadUrl}
+                            className="btn btn-sm btn-success"
+                            target="_blank"
+                            download={convertedConversion.convertedFileName}
+                          >
+                            <i className="fa fa-fw fa-download"></i> Download
+                          </a>
                         </div>
                       </td>
                     </tr>
@@ -319,7 +411,7 @@ function FileConversion(props) {
                 <button
                   type="reset"
                   className="btn btn-danger mr-1"
-                  onClick={() => setConversionData([])}
+                  onClick={() => deleteConversionData()}
                 >
                   <i className="fa fa-repeat"></i> Delete All
                 </button>
@@ -333,9 +425,9 @@ function FileConversion(props) {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {conversionData.length === 0 && (
+        {uploadedFileData.length === 0 && convertedFileData.length === 0 ? (
           <div className="d-flex justify-content-center">
             <div id="upload-file-block" className="block block-rounded">
               <div className="block-content">
@@ -382,7 +474,7 @@ function FileConversion(props) {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
       <Features />
     </>
