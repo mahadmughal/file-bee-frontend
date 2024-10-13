@@ -185,6 +185,12 @@ function FileConversion(props) {
     setUploadedFileData((prevUploadedFileData) => {
       const updatedUploadedFileData = [...prevUploadedFileData];
       updatedUploadedFileData.splice(index, 1);
+
+      localStorage.setItem(
+        "uploadedFileData",
+        JSON.stringify(updatedUploadedFileData)
+      );
+
       return updatedUploadedFileData;
     });
   };
@@ -193,6 +199,12 @@ function FileConversion(props) {
     setConvertedFileData((prevConvertedFileData) => {
       const updatedConvertedFilesData = [...prevConvertedFileData];
       updatedConvertedFilesData.splice(index, 1);
+
+      localStorage.setItem(
+        "convertedFilesData",
+        JSON.stringify(updatedConvertedFilesData)
+      );
+
       return updatedConvertedFilesData;
     });
   };
@@ -200,6 +212,9 @@ function FileConversion(props) {
   const deleteConversionData = () => {
     setUploadedFileData([]);
     setConvertedFileData([]);
+
+    localStorage.removeItem("uploadedFileData");
+    localStorage.removeItem("convertedFilesData");
   };
 
   const supportedConversionsOfUploadedFile = (fileObject) => {
