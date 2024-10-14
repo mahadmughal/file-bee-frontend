@@ -130,7 +130,7 @@ class ApiService {
   }
 
   async submitHelpRequest(formData) {
-    return this.postWithoutAuth("/api/send_help_request/", formData);
+    return this.postFormDataWithoutAuth("/api/send_help_request/", formData);
   }
 }
 
