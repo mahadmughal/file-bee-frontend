@@ -33,9 +33,20 @@ const HelpRequest = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log(formData);
+      const formDataToSend = new FormData();
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("subject", formData.subject);
+      formDataToSend.append("description", formData.description);
+      // Append file if it exists
+      if (formData.attachment) {
+        formDataToSend.append(
+          "attachment",
+          formData.attachment,
+          formData.attachment.name
+        );
+      }
 
-      const response = await apiService.submitHelpRequest(formData);
+      const response = await apiService.submitHelpRequest(formDataToSend);
 
       console.log("response: ", response);
       setMessage("Help request submitted successfully!");
