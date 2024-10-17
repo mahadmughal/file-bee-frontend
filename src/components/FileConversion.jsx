@@ -117,7 +117,7 @@ function FileConversion(props) {
         originalFileName: original_file.fileName,
         convertedFileDownloadUrl: converted_file_download_url,
         convertedFileName: converted_filename,
-        convertedFileSize: converted_file.size,
+        convertedFileSize: converted_file.converted_size,
         status: response.status,
       };
     } catch (error) {
@@ -150,6 +150,21 @@ function FileConversion(props) {
           const newConvertedFileConversion = await handleConversionRequest(
             uploadedConversion
           );
+
+          if (Object.keys(newConvertedFileConversion).length === 0) {
+            uploadedConversion = {
+              ...uploadedConversion,
+              status: "failed",
+            };
+
+            setUploadedFileData((prevUploadedFileData) => {
+              const updatedUploadedFileData = [...prevUploadedFileData];
+              updatedUploadedFileData[index] = uploadedConversion;
+              return updatedUploadedFileData;
+            });
+
+            return;
+          }
 
           setConvertedFileData((prevConvertedFileData) => [
             ...prevConvertedFileData,
@@ -249,6 +264,14 @@ function FileConversion(props) {
     return filename.substr(0, maxLength - 3) + "...";
   };
 
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} bytes`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+    if (bytes < 1024 * 1024 * 1024)
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  };
+
   return (
     <>
       <div className="content pb-5">
@@ -267,9 +290,7 @@ function FileConversion(props) {
             <div className="block-header block-header-default">
               <h3 className="block-title">{fileType} Conversions</h3>
               <div className="block-options">
-                <div className="block-options-item">
-                  {/* <code>.table</code> */}
-                </div>
+                <div className="block-options-item"></div>
               </div>
             </div>
             <div className="block-content">
@@ -334,6 +355,11 @@ function FileConversion(props) {
                           </span>
                         )}
                       </td>
+
+                      <td className="text-center">
+                        {formatFileSize(fileObject.file.size)}
+                      </td>
+
                       <td className="text-center">
                         <div className="btn-group">
                           <button
@@ -355,7 +381,7 @@ function FileConversion(props) {
                       <td className="font-w600">
                         <i className="fa fa-image mr-2"></i>
                         {truncateFilename(
-                          convertedConversion.convertedFileName
+                          convertedConversion?.convertedFileName || ""
                         )}
                       </td>
                       <td>
@@ -383,6 +409,9 @@ function FileConversion(props) {
                         </span>
                       </td>
                       <td className="text-center">
+                        {convertedConversion.convertedFileSize}
+                      </td>
+                      <td className="text-center">
                         <div className="btn-group">
                           <button
                             type="reset"
@@ -395,7 +424,7 @@ function FileConversion(props) {
                             href={convertedConversion.convertedFileDownloadUrl}
                             className="btn btn-sm btn-success"
                             target="_blank"
-                            download={convertedConversion.convertedFileName}
+                            download={convertedConversion?.convertedFileName}
                           >
                             <i className="fa fa-fw fa-download"></i> Download
                           </a>
