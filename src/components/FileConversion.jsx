@@ -301,6 +301,7 @@ function FileConversion(props) {
                     <th>Name</th>
                     <th>Supported Conversions</th>
                     <th className="d-none d-sm-table-cell">Status</th>
+                    <th className="text-center">File Size</th>
                     <th className="text-center">Actions</th>
                   </tr>
                 </thead>
