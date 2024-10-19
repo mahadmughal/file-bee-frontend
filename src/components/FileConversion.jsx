@@ -358,7 +358,9 @@ function FileConversion(props) {
                       </td>
 
                       <td className="text-center">
-                        {formatFileSize(fileObject.file.size)}
+                        {`${fileObject?.file?.name
+                          .split(".")
+                          .pop()} / ${formatFileSize(fileObject.file.size)}`}
                       </td>
 
                       <td className="text-center">
@@ -410,7 +412,9 @@ function FileConversion(props) {
                         </span>
                       </td>
                       <td className="text-center">
-                        {convertedConversion.convertedFileSize}
+                        {`${convertedConversion.convertedFileName
+                          .split(".")
+                          .pop()} / ${convertedConversion.convertedFileSize}`}
                       </td>
                       <td className="text-center">
                         <div className="btn-group">
