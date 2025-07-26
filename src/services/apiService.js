@@ -27,6 +27,7 @@ class ApiService {
   async fetchBase(endpoint, options = {}) {
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, options);
+      console.log("response in fetch_base: ", response);
       return this.handleResponse(response);
     } catch (error) {
       throw new Error("Network error or server unreachable");
@@ -131,6 +132,18 @@ class ApiService {
 
   async submitHelpRequest(formData) {
     return this.postFormDataWithoutAuth("/api/send_help_request/", formData);
+  }
+
+  async extractText(file, targetMimetype) {
+    const formData = new FormData();
+    formData.append("original_file", file);
+    formData.append("converted_mimetype", targetMimetype);
+    let authToken = JSON.parse(localStorage.getItem("authToken"));
+    if (authToken && authToken.key) {
+      authToken = authToken.key;
+    }
+    formData.append("auth_token", authToken);
+    return this.postFormDataWithoutAuth("/api/ocr/", formData);
   }
 }
 

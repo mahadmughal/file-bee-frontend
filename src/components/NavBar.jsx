@@ -125,6 +125,12 @@ const NavBar = () => {
                 </ul>
               </li>
               <li className="nav-main-item">
+                <Link to="/ocr" className="nav-main-link">
+                  <i className="nav-main-link-icon fa fa-fw fa-magic"></i>
+                  <span className="nav-main-link-name">OCR</span>
+                </Link>
+              </li>
+              <li className="nav-main-item">
                 <Link to="/api" className="nav-main-link">
                   <i className="nav-main-link-icon fa fa-fw fa-magic"></i>
                   <span className="nav-main-link-name">API</span>
