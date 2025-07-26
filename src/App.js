@@ -5,6 +5,7 @@ import AuthProvider from "./contexts/AuthContext";
 import { AlertProvider } from "./contexts/Alert";
 import Layout from "./pages/Layout";
 import FileConversion from "./components/FileConversion";
+import Ocr from "./components/Ocr";
 import ImageConverter from "./pages/converters/ImageConverter";
 import DocumentConverter from "./pages/converters/DocumentConverter";
 import AudioConverter from "./pages/converters/AudioConverter";
@@ -64,6 +65,9 @@ function App() {
                 </Layout>
               }
             />
+            <Route path="/ocr" element={<Layout />}>
+              <Route index element={<Ocr />} />
+            </Route>
             <Route path="/api" element={<Api />} />
             {/* Nested routes for Help */}
             <Route path="/help" element={<Layout />}>
