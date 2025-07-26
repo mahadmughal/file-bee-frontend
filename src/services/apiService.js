@@ -145,6 +145,17 @@ class ApiService {
     formData.append("auth_token", authToken);
     return this.postFormDataWithoutAuth("/api/ocr/", formData);
   }
+
+  async fetchOCRSupportedConversions(sourceMimetype = null) {
+    const endpoint = sourceMimetype 
+      ? `/api/ocr/supported_conversions/?source_mimetype=${encodeURIComponent(sourceMimetype)}`
+      : "/api/ocr/supported_conversions/";
+    return this.getWithoutAuth(endpoint);
+  }
+
+  async fetchOCRTargetFormats(sourceMimetype) {
+    return this.getWithoutAuth(`/api/ocr/target_formats/${sourceMimetype}/`);
+  }
 }
 
 export const apiService = new ApiService();

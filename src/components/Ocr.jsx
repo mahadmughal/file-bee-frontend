@@ -14,6 +14,8 @@ function Ocr() {
     JSON.parse(localStorage.getItem("extractedTextData")) || []
   );
   const [errorAlert, setErrorAlert] = useState(null);
+  const [availableFormats, setAvailableFormats] = useState({});
+  const [isLoadingFormats, setIsLoadingFormats] = useState(false);
 
   const ocrStatus = {
     ready: { badgeColor: "info", badgeText: "ready" },
@@ -22,30 +24,71 @@ function Ocr() {
     failed: { badgeColor: "danger", badgeText: "failed" },
   };
 
-  const outputFormats = [
-    { value: "text/plain", extension: "txt", label: "Text (.txt)" },
-    { value: "application/pdf", extension: "pdf", label: "PDF (.pdf)" },
-    {
-      value:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      extension: "docx",
-      label: "Word (.docx)",
-    },
-    {
-      value: "application/msword",
-      extension: "doc",
-      label: "Word 97-2003 (.doc)",
-    },
-  ];
+  // Function to get MIME type from file
+  const getFileMimeType = (file) => {
+    return file.type || 'application/octet-stream';
+  };
 
-  const handleFileUpload = (event) => {
+  // Function to get available formats for a file
+  const getAvailableFormatsForFile = (file) => {
+    const mimeType = getFileMimeType(file);
+    return availableFormats[mimeType] || [];
+  };
+
+  // Function to fetch available formats for a specific MIME type
+  const fetchFormatsForMimeType = async (mimeType) => {
+    if (availableFormats[mimeType]) {
+      return availableFormats[mimeType]; // Return cached formats
+    }
+
+    try {
+      setIsLoadingFormats(true);
+      const response = await apiService.fetchOCRTargetFormats(mimeType);
+      
+      const formats = response.target_formats.map(format => ({
+        value: format.mimetype,
+        extension: format.extension,
+        label: format.label
+      }));
+
+      setAvailableFormats(prev => ({
+        ...prev,
+        [mimeType]: formats
+      }));
+
+      return formats;
+    } catch (error) {
+      console.error("Error fetching formats:", error);
+      setErrorAlert({
+        type: "error",
+        title: "Format Loading Error",
+        message: "Failed to load available output formats for this file type."
+      });
+      return [];
+    } finally {
+      setIsLoadingFormats(false);
+    }
+  };
+
+  const handleFileUpload = async (event) => {
     const files = event.target.files;
     const fileObjects = [...files].map((file) => ({
       file: file,
       status: "ready",
       outputFormat: "",
+      mimeType: getFileMimeType(file),
     }));
+    
     setUploadedFileData([...uploadedFileData, ...fileObjects]);
+
+    // Fetch available formats for each unique MIME type
+    const uniqueMimeTypes = [...new Set(fileObjects.map(f => f.mimeType))];
+    
+    for (const mimeType of uniqueMimeTypes) {
+      if (!availableFormats[mimeType]) {
+        await fetchFormatsForMimeType(mimeType);
+      }
+    }
   };
 
   const selectOutputFormat = (event) => {
@@ -233,8 +276,21 @@ function Ocr() {
   };
 
   const getFormatLabel = (mimeType) => {
-    const format = outputFormats.find((f) => f.value === mimeType);
-    return format ? format.extension : mimeType;
+    // Search through all available formats to find the label
+    for (const formatList of Object.values(availableFormats)) {
+      const format = formatList.find((f) => f.value === mimeType);
+      if (format) {
+        return format.extension;
+      }
+    }
+    
+    // Fallback: extract extension from MIME type or return the MIME type
+    if (mimeType.includes('/')) {
+      const parts = mimeType.split('/');
+      return parts[1] || mimeType;
+    }
+    
+    return mimeType;
   };
 
   return (
@@ -300,9 +356,9 @@ function Ocr() {
                           onChange={selectOutputFormat}
                         >
                           <option value="" required>
-                            Select output format...
+                            {isLoadingFormats ? "Loading formats..." : "Select output format..."}
                           </option>
-                          {outputFormats.map((format, formatIndex) => (
+                          {getAvailableFormatsForFile(fileObject.file).map((format, formatIndex) => (
                             <option key={formatIndex} value={format.value}>
                               {format.label}
                             </option>
